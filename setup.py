@@ -21,7 +21,8 @@ setuptools.setup(
         "matplotlib",
         "ase",
         "MDAnalysis>=2.0.0",
-        "pyiron_atomistics==0.2.47"
+        "pyiron_atomistics==0.2.47",
+        "pyiron==0.4.6",
   ]
 #    entry_points={
 #        'console_scripts': [
