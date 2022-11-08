@@ -12,7 +12,7 @@ setuptools.setup(
     description= "pyiron based implements in ChengLab",
 #    long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=setuptools.find_packages()+["pyiron_echem/*"],
+    packages=setuptools.find_packages()+["pyiron_echem/cp2k"],
     classifiers=[
         "Programming Language :: Python :: 3",
     ],
