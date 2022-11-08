@@ -13,7 +13,7 @@ setuptools.setup(
 #    long_description=long_description,
     long_description_content_type="text/markdown",
     #revise the path of the package
-    packages=setuptools.find_packages()+["pyiron_echem"]+["pyiron_echem/cp2k"],
+    packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
     ],
