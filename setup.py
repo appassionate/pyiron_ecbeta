@@ -3,15 +3,16 @@ import setuptools
 #with open("README.md", "r") as fh:
 #    long_description = fh.read()
 
+#it is still named as pyiron_echem when install
 setuptools.setup(
-    name="pyiron_ecbeta",
+    name="pyiron_echem",
     version="0.0.1",
     author="Ke Xiong",
     author_email="xiongke@stu.xmu.edu.cn",
     description= "pyiron based implements in ChengLab",
 #    long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages()+["pyiron_echem"],
     classifiers=[
         "Programming Language :: Python :: 3",
     ],
