@@ -4,7 +4,7 @@ import setuptools
 #    long_description = fh.read()
 
 setuptools.setup(
-    name="pyiron_echem",
+    name="pyiron_ecbeta",
     version="0.0.1",
     author="Ke Xiong",
     author_email="xiongke@stu.xmu.edu.cn",
