@@ -18,7 +18,7 @@ def dict2inp(input_dict, mode='local', *fargs, **fkwargs):
 def inp2dict(filename, mode='local',  *fargs, **fkwargs):
 
     #pass
-    if mode == "cp2k":
+    if mode == "local":
         parserfunc=local2dict
     # else:
     #     parserfunc=cp2k2dict
