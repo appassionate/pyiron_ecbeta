@@ -89,7 +89,7 @@ class Cp2kJob(AtomisticGenericJob):
         if self.server.run_time:
             self.input.control.GLOBAL["WALLTIME"] = \
                 self.server.run_time-200
-        assert int(self.input.control.GLOBAL["WALLTIME"]) > 0
+            assert int(self.input.control.GLOBAL["WALLTIME"]) > 0
         
     
     def _write_cp2k_input(self):
