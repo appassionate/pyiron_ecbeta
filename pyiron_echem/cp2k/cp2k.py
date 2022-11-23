@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import warnings
 
-
+from pyiron import Project
 from pyiron_base import DataContainer, state
 from pyiron_base.job.executable import Executable
 from pyiron_base import GenericMaster
@@ -52,7 +52,37 @@ class Cp2kJob(AtomisticGenericJob):
         
         self._executable_activate(enforce=True) #这里激活executable倒是可以正常进行，因为包里有了cp2k/... 模块
      
-        
+
+
+    # adding pickle implements to special job, it might a wrong place
+    def __reduce__(self, ):
+
+        from pyiron import pyiron_to_ase
+
+        #removed self._server
+        return (self._unpickle_J, (
+                                self.project.path, self.job_name, pyiron_to_ase(self._structure),\
+                                    self.input, self._executable,\
+                                    self.restart_file_list, self._compress_by_default, )
+                )
+
+    @classmethod
+    def _unpickle_J(cls, project_path, job_name, structure, job_input, job_exec, job_restart_file_list, job_compress_flag):
+
+        from pyiron import ase_to_pyiron
+
+        pr = Project(project_path) #we cant just copy project for the job_type unpickable
+        #job = cls(project=pr, job_name=job_name)
+        job = pr.create_job(job_type=cls, job_name=job_name)
+        job.structure = ase_to_pyiron(structure)
+        job.input = job_input
+        #job._server = job_server # _runmode unpickle, removed
+
+        job._executable = job_exec #not for pyiron_base job?
+        job.restart_file_list = job_restart_file_list
+        job.compress_by_default = job_compress_flag
+
+        return job
 
     def to_hdf(self, hdf=None, group_name=None):
         """
@@ -331,6 +361,14 @@ class Cp2kJob(AtomisticGenericJob):
 class Cp2kInput():
     
     def __init__(self, ff_type="DFT", parser="local"):
+        
+        #TODO:
+        # 以后拆分成:
+        # 1. mainpage(没想好名字) 进行主要的关键词的存储
+        # 2. global: global有关时间墙和其他的存储
+        # 3. control 一些快捷定义任务的方法的实现
+        # 4. 其他已经well defined的模块可以继续从mainpage中抽出来做对象处理
+        
         
         self.control = Cp2kControl(table_name="cp2k_control")
         self.kind = kind_dict[ff_type](table_name="cp2k_kind")

@@ -1,5 +1,6 @@
 
 import numpy as np
+from pyiron import Project
 from pyiron_atomistics.vasp.vasp import Vasp
 from pyiron_atomistics.vasp.base import VaspCollectError
 
@@ -8,6 +9,36 @@ from pyiron_atomistics.vasp.base import VaspCollectError
 # in our routine, now, we have less using in those result, so to lite the vasp job will be neccessary 
 # it is why Vasplite matters
 class Vasplite(Vasp):
+
+    # adding pickle implements to special job, it might a wrong place
+    def __reduce__(self, ):
+
+        from pyiron import pyiron_to_ase
+
+        #removed self._server
+        return (self._unpickle_J, (
+                                self.project.path, self.job_name, pyiron_to_ase(self._structure),\
+                                    self.input, self._executable,\
+                                    self.restart_file_list, self._compress_by_default, )
+                )
+
+    @classmethod
+    def _unpickle_J(cls, project_path, job_name, structure, job_input, job_exec, job_restart_file_list, job_compress_flag):
+
+        from pyiron import ase_to_pyiron
+
+        pr = Project(project_path) #we cant just copy project for the job_type unpickable
+        #job = cls(project=pr, job_name=job_name)
+        job = pr.create_job(job_type=cls, job_name=job_name)
+        job.structure = ase_to_pyiron(structure)
+        job.input = job_input
+        #job._server = job_server # _runmode unpickle, removed
+
+        job._executable = job_exec #not for pyiron_base job?
+        job.restart_file_list = job_restart_file_list
+        job.compress_by_default = job_compress_flag
+
+        return job
 
     def __init__(self, project, job_name):
         super(Vasplite, self).__init__(project, job_name)
