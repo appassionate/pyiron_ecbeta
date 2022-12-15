@@ -1,4 +1,4 @@
-from pyiron_base.generic.datacontainer import DataContainer
+from pyiron_base.storage.datacontainer import DataContainer
 
 from pyiron_echem.cp2k.parser.utils import dict2inp
 import copy

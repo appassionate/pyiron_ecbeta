@@ -1,5 +1,5 @@
 #关于structure的部分 要写一些方法 构造CELL, 信息
-from pyiron_atomistics.atomistics.structure.atoms import ase_to_pyiron
+from pyiron import ase_to_pyiron
 
 from ase import Atoms
 import numpy as np
