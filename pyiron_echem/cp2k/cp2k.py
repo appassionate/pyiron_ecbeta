@@ -7,7 +7,7 @@ import warnings
 
 from pyiron import Project
 from pyiron_base import DataContainer, state
-from pyiron_base.job.executable import Executable
+from pyiron_base.jobs.job.extension.executable import Executable
 from pyiron_base import GenericMaster
 
 

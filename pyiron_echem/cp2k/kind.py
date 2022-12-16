@@ -1,7 +1,7 @@
 import copy
 
 from pyiron_echem.cp2k import _E_WITH_Q
-from pyiron_base.generic.datacontainer import DataContainer
+from pyiron_base.storage.datacontainer import DataContainer
 
 
 class Cp2kKind(DataContainer):

@@ -1,5 +1,6 @@
 import os
 import time
+import shutil
 
 import pandas as pd
 from pathlib import Path
@@ -109,6 +110,29 @@ def batch_run_job_lst(jobs, onqueue_num=4, exec_name=None, queue=None, interval=
     
     return submitted_jobs
 
+
+def backup_job_file(cp2kjob, filename="output"):
+
+    file_path = Path(cp2kjob.working_directory).joinpath(filename)
+    # TODO: 是否是文件的判断
+    if file_path.is_file(): 
+        counter = 0
+        while True :
+            bk_file_path = file_path.parent.joinpath(file_path.name+".bak%03d" % counter)
+            if not bk_file_path.exists(): 
+                shutil.move(file_path, bk_file_path) 
+                print(f"cur output: {file_path.name} has been bakup to {bk_file_path.name}")
+                break
+            counter += 1
+
+def backup_job_file_by_pattern(cp2kjob, pattern):
+
+    files = Path(cp2kjob.working_directory).glob(pattern)
+    files = list(files)
+    for _file in files:
+        backup_job_file(cp2kjob, _file.name)
+
+
 def retry_cp2k_job(job, use_wfn=True):
     
     #assert job == cp2kjob
@@ -134,6 +158,72 @@ def retry_cp2k_job(job, use_wfn=True):
     job.write_input()
     #job save时候会更新Input文件!
     #job.save()
+    backup_job_file(job,"output")
+    
+    #check cur step to avid append step
+    curstep = get_cp2k_job_md_curstep(job)
+
+    #fix cp2k 8.2 bug
+    backup_job_file_by_pattern(job, f"pyiron-v_hartree-1_{curstep}.cube")
+    backup_job_file_by_pattern(job, f"pyiron-k*-1_{curstep}.pdos")
     
     return job
+    
 
+def reset_cp2k_md_step(cp2kjob, totalstep:int):
+    """reset step by the target total step nums, 
+    determine how many steps are need to the next calculations
+    Args:
+        cp2kjob (_type_): pyiron_echem cp2kjob
+        totalstep (int): the target md steps you want calc to finish
+    Raises:
+        ValueError: _description_
+    """
+    #check current step and target step in restart file
+    curstep = get_cp2k_job_md_curstep(cp2kjob)
+    _step = totalstep - curstep
+    if _step <= 0:
+        raise ValueError("MD simulation seems to be finished.")
+    cp2kjob.input.control.MOTION["MD"]["STEPS"] = _step
+    
+    print(f"setting MD steps to next: {_step} of cur: {curstep} in total: {totalstep}")
+    pass
+
+def get_cp2k_job_md_curstep(cp2k_job):
+    
+    ## 1. using linux shell get ener tail info
+    # import subprocess 
+    # ener_file = cp2k_job.job_file_name("pyiron-1.ener")
+    # proc = subprocess.Popen(["tail","-n","1",f"{ener_file}"], stderr=None, stdout=subprocess.PIPE)
+    # out, _ = proc.communicate()
+    # curstep = int(out.split()[0])
+    
+    # 2. using restart file to locate current step
+    _line = True
+    with open(cp2k_job.job_file_name("pyiron-1.restart"), "r") as f:
+        while _line:
+            _line = f.readline()
+            if "STEP_START_VAL" in _line:
+                break
+    if not _line:
+        raise FileNotFoundError("STEP_START_VAL not found in this file!")
+    curstep = int(_line.split()[1])
+    
+    return curstep
+    
+
+def check_cp2k_job_md_finished(cp2k_job, totalstep:int):
+    
+    if cp2k_job.input.control.GLOBAL["RUN_TYPE"] != "MD":
+        raise ValueError(f"{cp2k_job.job_name} is not molecular dynamic job!")
+    #check current step and target step in restart file
+    curstep  = get_cp2k_job_md_curstep(cp2k_job)
+    
+    print(f"{cp2k_job.job_name} current step: cur: {curstep} in total: {totalstep}")
+    if curstep == totalstep:
+        print ("MD finished.")
+        return True
+    elif curstep > totalstep:
+        print("MD finished, more steps are detected.")
+        return True
+    return False
