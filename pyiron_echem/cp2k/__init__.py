@@ -1,6 +1,6 @@
 import pathlib
 
-#copied from ecint
+#copied from ecint, to parameters for quick determine the pseduso and basisset
 _E_WITH_Q = {'H': '1', 'He': '2', 'Li': '3', 'Be': '4', 'B': '3', 'C': '4',
              'N': '5', 'O': '6', 'F': '7', 'Ne': '8',
              'Na': '9', 'Mg': '2', 'Al': '3', 'Si': '4', 'P': '5', 'S': '6',
@@ -18,8 +18,3 @@ _E_WITH_Q = {'H': '1', 'He': '2', 'Li': '3', 'Be': '4', 'B': '3', 'C': '4',
              'Pt': '18', 'Au': '19', 'Hg': '12', 'Tl': '3', 'Pb': '4',
              'Bi': '5', 'Po': '6', 'At': '7', 'Rn': '8'}
 
-
-
-
-#followed with cp2k-input-tools
-DEFAULT_CP2K_INPUT_XML = pathlib.Path(__file__).resolve().parent.joinpath("./xmls/cp2k_input_dpmd.xml")
