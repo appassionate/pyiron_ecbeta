@@ -75,8 +75,6 @@ class Cp2kControl():
 
     def update_topo_molset(self, conn_filename, new_conn_nmol=None, new_conn_format=None, new_file_name=None):
 
-        #根据conn_filename关键词寻找对应的idx, 进行修改
-        #update 方法更新MOL_SET MOLECULE中的分子信息
 
         MOLECULE = self._input.content["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]["MOL_SET"]["MOLECULE"]
         conn_idx = 'not'
