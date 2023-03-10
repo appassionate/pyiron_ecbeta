@@ -47,7 +47,6 @@ class Vasplite(Vasp):
             None  # Reset the version number to the executable is set automatically
         )
         self._compress_by_default =False
-        # 当前版本Vasp 的压缩选项有问题， 选择直接设置为fasle,避免重新序列化时自动压缩
         #self._executable_activate(enforce=True)
         self._executable_activate(enforce=True,codename="vasp")
 

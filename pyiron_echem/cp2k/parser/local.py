@@ -7,7 +7,9 @@ from collections.abc import MutableMapping, Sequence
 from dataclasses import dataclass
 from warnings import warn
 
-#such a input2config is designed by jingfang xiong
+# parser might be customized?
+# currently(20230305), the local parser  can process the most jobs in cp2k. 
+
 
 def local2dict(filename, ):
 
@@ -28,7 +30,7 @@ def local2inp(local_inp_dict):
     local_inp_dict = copy.deepcopy(local_inp_dict)
     return Cp2kLocalInputParser.render(local_inp_dict)
 
-
+#such a input2config is designed by Jingfang Xiong
 @dataclass(frozen=True)
 class InsertValue:
     key: str
@@ -41,7 +43,6 @@ def flatten_seq(sequence):
                 yield subitem
         else:
             yield item
-
 
 
 class Cp2kLocalInputParser:
