@@ -5,7 +5,6 @@ from .local import local2inp, local2dict
 
 def dict2inp(input_dict, mode='local', *fargs, **fkwargs):
 
-
     if mode =='local':
         writefunc = local2inp
     # else:
