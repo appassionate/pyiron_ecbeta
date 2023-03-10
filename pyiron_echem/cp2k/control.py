@@ -35,7 +35,6 @@ class Cp2kControl():
         if self._input.content["FORCE_EVAL"]["SUBSYS"].get("TOPOLOGY"):
             TOPO = self._input.content["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]
         else:
-            #TODO 以后报warning?
             return 
         if TOPO.get("CONN_FILE_NAME"):
             del TOPO["CONN_FILE_NAME"]
