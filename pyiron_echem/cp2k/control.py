@@ -1,127 +1,39 @@
-from pyiron_base.storage.datacontainer import DataContainer
+from pyiron_base.state import state
+from pyiron_echem.cp2k.content import Cp2kContent
 
-from pyiron_echem.cp2k.parser.utils import dict2inp
-import copy
 
-class Cp2kControl(DataContainer):
+class Cp2kControl():
     
-    def __init__(self, init=None, table_name=None, lazy=False, wrap_blacklist=(dict,)):
-        #followed with datacontainer, what lazy and wrapblack_list mean?
-        super().__init__(
-                        init=init,
-                        table_name=table_name,
-                        lazy=lazy,
-                        wrap_blacklist=wrap_blacklist,
-                        )
+    def __init__(self, cp2kinput):
         
-        pass
-    
-    def _init_control(self):
-        #由于__init__存在递归生成datacontainer  要重新清理input 模板的内容 init必须在整体control生成之后
-        if not self["FORCE_EVAL"]["SUBSYS"].get("TOPOLOGY"):
-            self["FORCE_EVAL"]["SUBSYS"] = {}
+        self._input = cp2kinput
+        self._logger = state.logger
         
-        self._remove_cell()
-        self._remove_coord()
-        self._remove_kind()
-        self._remove_topo_coord()
-        self._fill_topo()
-        self.set_default_struct()
-        self.set_default_global()
-        #self.set_default_cell() 
-        
-        if self["FORCE_EVAL"].get("DFT"):
-            self._remove_basisset_dir()
-            self._remove_potential_dir()
+        #check it not be recursive init
+        #TODO:seems bug
+        #self._input.content = self._input.content
         
 
-    # @classmethod
-    # def from_input_file(self, input_filename, canonical=False, loadfunc=aiida2dict):
-        
-    #     #using cp2k-input-tools to read a template input to save complex input settings
-    #     #problem will be unclean template 
-    #     input_dict = loadfunc(input_filename, canonical)
-    #     return Cp2kControl(input_dict)
-    
-    
-    
-    @classmethod
-    def from_input_dict(self, input_dict, *args, **qargs):
-        
-        #这里暂时没有做其他的格式识别, 另外需要在这里做一些dict清理
-        #不能在
-        input_dict = copy.deepcopy(input_dict)
-        return Cp2kControl(input_dict, *args, **qargs)
-    
-    
-    def as_input_dict_part(self,): #保留主input的树结构
-        return self.to_builtin()
-    
-    def render(self, mode='local'):
-        
-        txt = dict2inp(self.as_nested_dict(), mode=mode)# TODO  可能会有问题，parser的选择等
-
-        return txt
-    
-    def preview(self,):
-        
-        txt = self.render()
-        print(txt)
-
-    def _remove_kind(self):
-        try:
-            del self["FORCE_EVAL"]["SUBSYS"]["KIND"]
-        except:
-            pass
-        
     def _remove_basisset_dir(self):
-        del self["FORCE_EVAL"]["DFT"]["BASIS_SET_FILE_NAME"]
+        
+        del self._input.content["FORCE_EVAL"]["DFT"]["BASIS_SET_FILE_NAME"]
     
     def _remove_potential_dir(self):
-        del self["FORCE_EVAL"]["DFT"]["POTENTIAL_FILE_NAME"]
+        del self._input.content["FORCE_EVAL"]["DFT"]["POTENTIAL_FILE_NAME"]
 
-    def _remove_cell(self):
+
+    def _clean_topology(self):
         try:
-            del self["FORCE_EVAL"]["SUBSYS"]["CELL"]
+            del self._input.content["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]
         except:
-            pass #这里异常处理很简陋
+            pass
+        self._input.content["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"] = {}
 
-    def _remove_coord(self):
-        try:
-            del self["FORCE_EVAL"]["SUBSYS"]["COORD"]
-        except:
-            pass #这里异常处理很简陋
-
-
-    # def _clean_topology(self):
-    #     try:
-    #         del self["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]
-    #     except:
-    #         pass
-    #     self["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"] = {}
-
-    def _fill_topo(self):
-        SUBSYS = self["FORCE_EVAL"]["SUBSYS"]
-        if not SUBSYS.get("TOPOLOGY"):
-            SUBSYS["TOPOLOGY"] = {}
-
-
-    def _remove_topo_coord(self):
-        #TODO 如何适配不同的input文件 仍然是问题
-        if self["FORCE_EVAL"]["SUBSYS"].get("TOPOLOGY"):
-            TOPO = self["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]
-        else:
-            #TODO 以后报warning?
-            return 
-        if TOPO.get("COORD_FILE_FORMAT"):
-            del TOPO["COORD_FILE_FORMAT"]
-        if TOPO.get("COORD_FILE_FORMAT"):
-            del TOPO["COORD_FILE_NAME"]
 
     def _remove_topo_conn(self):
         
-        if self["FORCE_EVAL"]["SUBSYS"].get("TOPOLOGY"):
-            TOPO = self["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]
+        if self._input.content["FORCE_EVAL"]["SUBSYS"].get("TOPOLOGY"):
+            TOPO = self._input.content["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]
         else:
             #TODO 以后报warning?
             return 
@@ -131,41 +43,23 @@ class Cp2kControl(DataContainer):
             del TOPO["CONNECTIVITY"]
 
     def set_topo_conn(self, conn_file_name, conn_type="PSF"):
-        TOPO = self["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]
+        TOPO = self._input.content["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]
         TOPO["CONNECTIVITY"] = conn_file_name
         TOPO["CONN_FILE_NAME"] = conn_type
         if not TOPO.get("DUMP_PSF"):
             TOPO["DUMP_PSF"] = {}
 
-    def set_default_struct(self):
-        
-        TOPO = self["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]
-        TOPO["COORD_FILE_FORMAT"] = "XYZ"
-        TOPO["COORD_FILE_NAME"] = "./struct.xyz"
-    
-    def set_default_global(self):
-        
-        # if self.get("GLOBAL"):
-        #     del self["GLOBAL"]
-        # self.update({"GLOBAL":{}}, blacklist=(dict,))
-        if self["GLOBAL"].get("PROJECT_NAME"):  #删除模板中多余的Project名称转换成Pyiron形式
-            del  self["GLOBAL"]["PROJECT_NAME"]
-        if self["GLOBAL"].get("PROJECT"):
-            del  self["GLOBAL"]["PROJECT"]
-        
-        self["GLOBAL"]["PROJECT_NAME"]="pyiron"
-        # self["GLOBAL"]["RUN_TYPE"] = "pyiron" #TODO 这里作为CP2K 关键词 不是任意的GEO_OPT MD 等
     
     def set_default_cell(self):
-        
-        self["FORCE_EVAL"]["SUBSYS"]["CELL"] = {}
-        self["FORCE_EVAL"]["SUBSYS"]["CELL"]["CELL_FILE_FORMAT"] = "CP2K"
-        self["FORCE_EVAL"]["SUBSYS"]["CELL"]["CELL_FILE_NAME"] = "cell.inp"
+        # TODO: it cant be run successfully
+        self._input.content["FORCE_EVAL"]["SUBSYS"]["CELL"] = {}
+        self._input.content["FORCE_EVAL"]["SUBSYS"]["CELL"]["CELL_FILE_FORMAT"] = "CP2K"
+        self._input.content["FORCE_EVAL"]["SUBSYS"]["CELL"]["CELL_FILE_NAME"] = "cell.inp"
     
     
     def _remove_topo_molset(self):
         
-        TOPO = self["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]
+        TOPO = self._input.content["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]
         assert TOPO["CONNECTIVITY "] == "MOL_SET"
         del TOPO["CONN_FILE_FORMAT"]
         del TOPO["MOL_SET"]
@@ -173,17 +67,18 @@ class Cp2kControl(DataContainer):
     
     def _init_topo_molset(self):
         
-        #self.clean_molset() TODO 还需要先clean吗
-        TOPO = self["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]
+        TOPO = self._input.content["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]
         TOPO["CONNECTIVITY"] = "MOL_SET"
         TOPO["MOL_SET"] = {}
         TOPO["MOL_SET"]["MOLECULE"] = []
     
+
     def update_topo_molset(self, conn_filename, new_conn_nmol=None, new_conn_format=None, new_file_name=None):
 
-        #由conn_filename关键词进行修改
+        #根据conn_filename关键词寻找对应的idx, 进行修改
+        #update 方法更新MOL_SET MOLECULE中的分子信息
 
-        MOLECULE = self["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]["MOL_SET"]["MOLECULE"]
+        MOLECULE = self._input.content["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]["MOL_SET"]["MOLECULE"]
         conn_idx = 'not'
         for idx, mol in enumerate(MOLECULE):
             if mol["CONN_FILE_NAME"] == conn_filename:
@@ -206,7 +101,7 @@ class Cp2kControl(DataContainer):
 
     def add_topo_molset(self, conn_filename, conn_num, conn_format="PSF"):
         
-        MOLECULE = self["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]["MOL_SET"]["MOLECULE"]
+        MOLECULE = self._input.content["FORCE_EVAL"]["SUBSYS"]["TOPOLOGY"]["MOL_SET"]["MOLECULE"]
         new_molecule = {
             "CONN_FILE_FORMAT":conn_format.upper(),
             "CONN_FILE_NAME": conn_filename,
@@ -215,65 +110,137 @@ class Cp2kControl(DataContainer):
         MOLECULE.append(new_molecule)
 
 
-    def enable_scf_ot(self):
+    def _enable_dft_calculation():
+        
+        # 1. DFT kindsection 
+        # 2. SCF
+        # 3. KIND settings
+        # 4. basisset and pseudo..
+        
+        pass
 
-        self["FORCE_EVAL"]["DFT"]["SCF"] = {
+    def enable_dft(self, algorithm="OT"):
+        
+        self._input.content["FORCE_EVAL"]["DFT"] = Cp2kContent({})
+        self.set_dft_basis_and_potential_file()
+        self.set_dft_qs()
+        self.set_dft_xc()
+        
+        if algorithm in ("OT", "ot"):
+            self.enable_dft_scf_ot()
+        elif algorithm in ("DIAG", "diag"):
+            self.enable_dft_scf_diagonal()
+        
+
+    def set_dft_basis_and_potential_file(self, 
+                                         basis_file="BASIS_MOLOPT",
+                                         potential_file="GTH_POTENTIALS"):
+        self._input.content["FORCE_EVAL"]["DFT"]["BASIS_SET_FILE_NAME"] = basis_file
+        self._input.content["FORCE_EVAL"]["DFT"]["POTENTIAL_FILE_NAME"] = potential_file
+
+    def set_dft_multip(self, multip=1):
+        self._input.content["FORCE_EVAL"]["DFT"]["MULTIP"] = multip
+    def set_dft_plus_u_method(self, multip=1):
+        self._input.content["FORCE_EVAL"]["DFT"]["MULTIP"] = multip
+    def set_dft_qs(self, eps_default=1.0E-13):
+        _template = {"QS":{"EPS_DEFAULT":eps_default}}
+        self._input.content["FORCE_EVAL"]["DFT"] = Cp2kContent(_template)
+    def set_dft_xc(self, xc_functional='PBE'):
+        _template = {"XC":{"XC_FUNCTIONAL":xc_functional}}
+        self._input.content["FORCE_EVAL"]["DFT"] = Cp2kContent(_template)
+
+    def set_dft_print_pdos_and_hatree(self, each_md_step=None, enable_pdos=True, enable_hatree=True):
+
+        if each_md_step:
+            try:
+                assert self._input.contentt["GLOBAL"]["RUN_TYPE"] == "MD"
+            except:
+                raise ValueError("wrong RUN_TYPE, you cant dft md_step in no MD tasks.")
+        _template = {'PDOS': {'ADD_LAST': 'NUMERIC',
+            'APPEND': '.TRUE.',
+            'COMMON_ITERATION_LEVELS': '0',
+            'COMPONENTS': '',
+            'EACH': {'GEO_OPT': '0'},
+            'NLUMO': '-1'},
+            'V_HARTREE_CUBE': {'ADD_LAST': 'NUMERIC',
+            'APPEND': '.TRUE.',
+            'COMMON_ITERATION_LEVELS': '0',
+            'EACH': {'GEO_OPT': '0'}}}
+        if each_md_step:
+            _template["PDOS"]["EACH"]["MD"] = each_md_step
+            _template["V_HARTREE_CUBE"]["EACH"]["MD"] = each_md_step
+        if not enable_pdos:
+            del _template["PDOS"]
+        if not enable_hatree:
+            del _template["V_HARTREE_CUBE"]
+        
+        self._input.content["FORCE_EVAL"]["DFT"]["PRINT"] = Cp2kContent(_template)
+        pass
+
+    def _clean_dft_scf(self):
+        self._input.content["FORCE_EVAL"]["DFT"].pop("SCF", None)
+
+    def enable_dft_scf_ot(self):
+        
+        self._clean_dft_scf()
+        _template = {
             'EPS_SCF': '1e-06',
             'MAX_SCF': '50',
             'SCF_GUESS': 'ATOMIC',
-            'OUTER_SCF': {'EPS_SCF': '1e-06', 'MAX_SCF': '10'},
-            'OT': {'ENERGY_GAP': '0.1',
-            'PRECONDITIONER': 'FULL_SINGLE_INVERSE',
-            'MINIMIZER': 'DIIS'}
+            'OUTER_SCF': {'EPS_SCF': '1e-06', 
+                          'MAX_SCF': '10'},
+            'OT': {
+                'ENERGY_GAP': '0.1',
+                'PRECONDITIONER': 'FULL_SINGLE_INVERSE',
+                'MINIMIZER': 'DIIS'
+                }
             }
+        self._input.content["FORCE_EVAL"]["DFT"]["SCF"] = Cp2kContent(_template)
 
 
-    def enable_scf_diagonal(self):
-
-        self["FORCE_EVAL"]["DFT"]["SCF"] = {
+    def enable_dft_scf_diagonal(self):
+        
+        self._clean_dft_scf()
+        _template = {
             'SCF_GUESS': 'ATOMIC',
             'EPS_SCF': '3.0E-7',
-            'MAX_SCF': '500',
+            'MAX_SCF': '500', #1500
             'ADDED_MOS': '500',
             'CHOLESKY': 'INVERSE',
             'SMEAR': {'_': 'ON',
-            'METHOD': 'FERMI_DIRAC',
-            'ELECTRONIC_TEMPERATURE': '[K] 300'},
-            'DIAGONALIZATION': {'ALGORITHM': 'STANDARD'},
+                      'METHOD': 'FERMI_DIRAC',
+                      'ELECTRONIC_TEMPERATURE': '[K] 300'
+                },
+            'DIAGONALIZATION': {
+                'ALGORITHM': 'STANDARD'
+                },
             'MIXING': {'METHOD': 'BROYDEN_MIXING',
-            'ALPHA': '0.3',
-            'BETA': '1.5',
-            'NBROYDEN': '8'},
-            'PRINT': {'RESTART': {'EACH': {'QS_SCF': '50'}, 'ADD_LAST': 'NUMERIC'}}
+                       'ALPHA': '0.3',
+                       'BETA': '1.5',
+                       'NBROYDEN': '8'},
+            'PRINT': {
+                'RESTART': {
+                    'EACH': {
+                        'QS_SCF': '50'
+                        }, 
+                    'ADD_LAST': 'NUMERIC'}}
         }
+        self._input.content["FORCE_EVAL"]["DFT"]["SCF"] = Cp2kContent(_template)
 
 
+    # def _clean_scf_ot(self):
+    #     SCF = self._input.content["FORCE_EVAL"]["DFT"]["SCF"]
+    #     keys_to_delete = ["OUTER_SCF", "OT"]
+    #     for key in keys_to_delete:
+    #         SCF.pop(key, None)
 
-    def _clean_scf_ot(self):
-        SCF = self["FORCE_EVAL"]["DFT"]["SCF"]
-        if SCF.get("OUTER_SCF"):
-            del SCF["OUTER_SCF"]
-        if SCF.get("OT"):
-            del SCF["OT"]
+    #     pass
 
-        pass
+    # def _clean_scf_diagonal(self):
+    #     # seems complecated
+    #     SCF = self._input.content["FORCE_EVAL"]["DFT"]["SCF"]
+    #     keys_to_delete = ["DIAGONALIZATION", "ADDED_MOS", "CHOLESKY", "SMEAR", "MIXING", "PRINT"]
+    #     for key in keys_to_delete:
+    #         SCF.pop(key, None)
 
-    def _clean_scf_diagonal(self):
-        # seems complecated
-        SCF = self["FORCE_EVAL"]["DFT"]["SCF"]
-        if SCF.get("DIAGONALIZATION"):
-            del SCF["DIAGONALIZATION"]
-        if SCF.get("ADDED_MOS"):
-            del SCF["ADDED_MOS"]
-        if SCF.get("CHOLESKY"):
-            del SCF["CHOLESKY"]
-        if SCF.get("SMEAR"):
-            del SCF["SMEAR"]
-        if SCF.get("SMEAR"):
-            del SCF["SMEAR"]
-        if SCF.get("MIXING"):
-            del SCF["MIXING"]
-        if SCF.get("PRINT"):
-            del SCF["PRINT"]
-
-        pass
+    #     pass
