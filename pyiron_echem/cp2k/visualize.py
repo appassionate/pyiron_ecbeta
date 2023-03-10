@@ -80,16 +80,16 @@ class ECViewer():
         self.colors = {} #for chose use
         self._resize_widget(xsize, ysize)
         self.view.camera = 'orthographic'
-        self.parameters = {"clipDist": 0} #clipDist会有一个阶段的显示的效果，参考demo中的情况，也许可以输入更多的参数
-        self.view.add_unitcell()   #??? 或许是用来显示cell的
-        self.view.add_spacefill()  # to show structures
+        self.parameters = {"clipDist": 0}
+        self.view.add_unitcell()   
+        self.view.add_spacefill() 
         self.view.update_spacefill(
                     radiusScale=0.43
                 )        
     
     def set_wdg_gui(self):
          
-        #初始化组件
+        #init
         #frame select should be designed as a buttom input param
         #self.frm_sel_slider = IntSlider(value=0, min=0, max=len(ag.universe.trajectory) - 1) #it will be some slider in it  or maybe frm list
         

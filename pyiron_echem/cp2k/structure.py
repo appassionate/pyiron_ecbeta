@@ -7,10 +7,8 @@ import numpy as np
 
 def as_dict_from_struct(struct, as_input_part=True):
     
-    #没有考虑分数坐标
     if type(struct) == Atoms:
         struct = ase_to_pyiron(struct)
-    # 根据structure 生成CELL PBC
     
     cell_dict = {
                 "A": "    ".join([str(_) for _ in struct.cell.array[0].tolist()]),
@@ -39,5 +37,4 @@ def print_cell(cell_dict):
 
 def struct_from_input():
     
-    #把Input的结构(包括cell信息)转化成Atoms对象
     pass

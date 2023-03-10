@@ -157,21 +157,3 @@ class Cp2kControl():
     def _clean_dft_scf(self):
         self._input.content["FORCE_EVAL"]["DFT"].pop("SCF", None)
 
-
-
-    # def _clean_scf_ot(self):
-    #     SCF = self._input.content["FORCE_EVAL"]["DFT"]["SCF"]
-    #     keys_to_delete = ["OUTER_SCF", "OT"]
-    #     for key in keys_to_delete:
-    #         SCF.pop(key, None)
-
-    #     pass
-
-    # def _clean_scf_diagonal(self):
-    #     # seems complecated
-    #     SCF = self._input.content["FORCE_EVAL"]["DFT"]["SCF"]
-    #     keys_to_delete = ["DIAGONALIZATION", "ADDED_MOS", "CHOLESKY", "SMEAR", "MIXING", "PRINT"]
-    #     for key in keys_to_delete:
-    #         SCF.pop(key, None)
-
-    #     pass

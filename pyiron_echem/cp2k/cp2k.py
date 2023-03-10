@@ -26,8 +26,6 @@ from pyiron_echem.cp2k.parser.utils import inp2dict, dict2inp
 
 import ase.io as io
 
-#是否引入mda, 有待考虑
-from MDAnalysis import Universe
 
 
 class Cp2kJob(AtomisticGenericJob):
@@ -195,7 +193,6 @@ class Cp2kJob(AtomisticGenericJob):
 
     def restart(self, job_name=None, job_type=None):
         
-        #这里抄的lammps的方法
         """
         Restart a new job created from an existing Lammps calculation.
         Args:
@@ -213,28 +210,6 @@ class Cp2kJob(AtomisticGenericJob):
         #     new_ham.read_restart_file.append(self.get_workdir_file("restart.out"))
         return new_ham
 
-    # #仅支持nvt
-    # def _get_structure(self, frame=-1, wrap_atoms=False):
-        
-    #     warnings.warn("not support to wrap atoms")
-        
-    #     snapshot = Atoms(
-    #         elements=self.structure.elements,
-    #         positions=self._xyz_universe.trajectory[frame].positions,
-    #         cell=self.structure.cell,
-    #         pbc=self.structure.pbc,
-    #     )
-
-    #     return snapshot
-
-    # current we have no good solution to count frames in xyzfile without MDA
-    # def _number_of_structures(self):
-
-    #     # xyzfile = self["output/generic"]["xyz_filename"]
-    #     # xyzfile = self.job_file_name(xyzfile)
-    #     # u = Universe(xyzfile)
-
-    #     return len(self._xyz_universe.trajectory)
 
     def collect_xyz_file(self, file_pattern="pyiron-pos-1.xyz", cwd=None):
 
@@ -248,35 +223,14 @@ class Cp2kJob(AtomisticGenericJob):
         with self.project_hdf5.open("output/generic") as hdf_output:
             hdf_output["xyz_filename"] = file_name
 
-    # def collect_cube_file():
-    #     pass
-
-    # def collect_pdos_file():
-
-    #     pass
 
 
     def collect_output(self):
 
         self.collect_xyz_file(file_pattern="pyiron-pos-1.xyz", cwd=self.working_directory)
-        # self._xyz_universe = Universe(self.job_file_name("pyiron-pos-1.xyz")) #有pickle无法复原的问题
 
         self.input.from_hdf(self._hdf5)
 
-        #TODO collect 接口需要继续做
-        # if os.path.isfile(
-        #     self.job_file_name(file_name="dump.h5", cwd=self.working_directory)
-        # ):
-        #     self.collect_h5md_file(file_name="dump.h5", cwd=self.working_directory)
-        # else:
-        #     self.collect_dump_file(file_name="dump.out", cwd=self.working_directory)
-        
-        # self.collect_output_log(file_name="log.lammps", cwd=self.working_directory)
-        # if len(self.output.cells) > 0:
-        #     final_structure = self.get_structure(iteration_step=-1)
-        #     if final_structure is not None:
-        #         with self.project_hdf5.open("output") as hdf_output:
-        #             final_structure.to_hdf(hdf_output)
 
     def get_cp2k_frame(self, index=-1, pbc=True):
         #使用mda读取轨迹, 避免速度过慢
@@ -299,11 +253,6 @@ class Cp2kInput():
     def __init__(self, parser="local"):
         
         #TODO:
-        # 以后拆分成:
-        # 1. content 进行主要的关键词的存储
-        # 2. global: global有关时间墙和其他的存储
-        # 3. control 一些快捷定义任务的方法的实现
-        # 4. 其他已经well defined的模块可以继续从mainpage中抽出来做对象处理
         
         self.content = Cp2kContent(table_name="cp2k_content")
         self.parser=parser
