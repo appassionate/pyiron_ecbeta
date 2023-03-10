@@ -72,7 +72,6 @@ class ECViewer():
         
         self.view = NGLWidget(gui=False)  #or show_ase?
         
-        #轨迹，单结构则为add_structure, 以后整合为不同使用场合
         self.view.add_trajectory(MDAnalysisTrajectory(self._trajectory))
         
         #view.clear_representations()
