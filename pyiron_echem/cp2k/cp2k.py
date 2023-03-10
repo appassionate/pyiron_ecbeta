@@ -102,7 +102,7 @@ class Cp2kJob(AtomisticGenericJob):
         final_input = dict2inp(_input, mode=self.input.parser)
         
         with open(os.path.join(self.working_directory,"input.inp"),"w") as f:
-            f.write(final_input) #IO处理方式很简陋 也许pyiron有一些解决方案
+            f.write(final_input)
             
         
     
@@ -122,10 +122,6 @@ class Cp2kJob(AtomisticGenericJob):
     # here restart will create a new job, within new infos
     def _restart_cp2k_job(self, job_name=None, job_type=None):
         
-
-        # 1. 确定restart_file_list哪些是要复制的
-        ## .restart文件（包含位置信息？）
-        ## pyiron-RESTART.wfn* 文件
         ## 
 
         import copy
@@ -157,7 +153,6 @@ class Cp2kJob(AtomisticGenericJob):
         # using pyiron-1.restart in restart_job.input
         new_ham.input.content["EXT_RESTART"] = {}
         new_ham.input.content["EXT_RESTART"]["RESTART_FILE_NAME"] = "./pyiron-1.restart"
-        #重新设置 任务的counters
         #new_ham.input.content["EXT_RESTART"]["RESTART_COUNTERS"] = True
 
 
@@ -257,7 +252,6 @@ class Cp2kInput():
         self.content = Cp2kContent(table_name="cp2k_content")
         self.parser=parser
         self.control = Cp2kControl(self)
-        #psf文件应该怎么输出和导入，这是个问题
     
     def from_input_file(self, input_filename, *fargs, **fkwargs):
 

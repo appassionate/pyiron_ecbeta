@@ -1,4 +1,3 @@
-#关于structure的部分 要写一些方法 构造CELL, 信息
 from pyiron_atomistics.atomistics.structure.atoms import ase_to_pyiron
 
 from ase import Atoms
@@ -17,7 +16,7 @@ def as_dict_from_struct(struct, as_input_part=True):
                 "PERIODIC":"".join(np.array(["X","Y","Z"])[struct.pbc].tolist())
             }
     if (struct.pbc == False).all():
-        cell_dict["PERIODIC"] = "NONE" #解決不设置pbc时候的bug
+        cell_dict["PERIODIC"] = "NONE"
     
     if as_input_part:
         return {"FORCE_EVAL":{"SUBSYS":{"CELL":cell_dict}}}
