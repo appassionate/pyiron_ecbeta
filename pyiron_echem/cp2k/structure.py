@@ -1,5 +1,5 @@
 #关于structure的部分 要写一些方法 构造CELL, 信息
-from pyiron import ase_to_pyiron
+from pyiron_atomistics.atomistics.structure.atoms import ase_to_pyiron
 
 from ase import Atoms
 import numpy as np
@@ -34,11 +34,6 @@ def print_cell(cell_dict):
     period = f"PERIODIC {cell_dict['PERIODIC']}\n"
     
     return line_A+line_B+line_C+period
-
-
-def celldict2cell():
-    
-    pass
 
 
 
