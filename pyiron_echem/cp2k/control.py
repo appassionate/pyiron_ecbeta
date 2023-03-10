@@ -110,27 +110,6 @@ class Cp2kControl():
         MOLECULE.append(new_molecule)
 
 
-    def _enable_dft_calculation():
-        
-        # 1. DFT kindsection 
-        # 2. SCF
-        # 3. KIND settings
-        # 4. basisset and pseudo..
-        
-        pass
-
-    def enable_dft(self, algorithm="OT"):
-        
-        self._input.content["FORCE_EVAL"]["DFT"] = Cp2kContent({})
-        self.set_dft_basis_and_potential_file()
-        self.set_dft_qs()
-        self.set_dft_xc()
-        
-        if algorithm in ("OT", "ot"):
-            self.enable_dft_scf_ot()
-        elif algorithm in ("DIAG", "diag"):
-            self.enable_dft_scf_diagonal()
-        
 
     def set_dft_basis_and_potential_file(self, 
                                          basis_file="BASIS_MOLOPT",
@@ -180,52 +159,6 @@ class Cp2kControl():
     def _clean_dft_scf(self):
         self._input.content["FORCE_EVAL"]["DFT"].pop("SCF", None)
 
-    def enable_dft_scf_ot(self):
-        
-        self._clean_dft_scf()
-        _template = {
-            'EPS_SCF': '1e-06',
-            'MAX_SCF': '50',
-            'SCF_GUESS': 'ATOMIC',
-            'OUTER_SCF': {'EPS_SCF': '1e-06', 
-                          'MAX_SCF': '10'},
-            'OT': {
-                'ENERGY_GAP': '0.1',
-                'PRECONDITIONER': 'FULL_SINGLE_INVERSE',
-                'MINIMIZER': 'DIIS'
-                }
-            }
-        self._input.content["FORCE_EVAL"]["DFT"]["SCF"] = Cp2kContent(_template)
-
-
-    def enable_dft_scf_diagonal(self):
-        
-        self._clean_dft_scf()
-        _template = {
-            'SCF_GUESS': 'ATOMIC',
-            'EPS_SCF': '3.0E-7',
-            'MAX_SCF': '500', #1500
-            'ADDED_MOS': '500',
-            'CHOLESKY': 'INVERSE',
-            'SMEAR': {'_': 'ON',
-                      'METHOD': 'FERMI_DIRAC',
-                      'ELECTRONIC_TEMPERATURE': '[K] 300'
-                },
-            'DIAGONALIZATION': {
-                'ALGORITHM': 'STANDARD'
-                },
-            'MIXING': {'METHOD': 'BROYDEN_MIXING',
-                       'ALPHA': '0.3',
-                       'BETA': '1.5',
-                       'NBROYDEN': '8'},
-            'PRINT': {
-                'RESTART': {
-                    'EACH': {
-                        'QS_SCF': '50'
-                        }, 
-                    'ADD_LAST': 'NUMERIC'}}
-        }
-        self._input.content["FORCE_EVAL"]["DFT"]["SCF"] = Cp2kContent(_template)
 
 
     # def _clean_scf_ot(self):
