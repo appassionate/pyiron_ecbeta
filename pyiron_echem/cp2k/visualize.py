@@ -2,6 +2,7 @@ from ipywidgets import Dropdown, FloatSlider, IntSlider, HBox, VBox, Text, inter
 
 from nglview.widget import NGLWidget
 from nglview import MDAnalysisTrajectory
+import nglview as nv
 import nglview.color
 import os
 from pyiron_base.state import state
@@ -15,19 +16,32 @@ class Cp2kView():
         self._job = job
         self._logger = state.logger
 
-    def view_cp2k_job_structure(self, ):
+    def view_cp2k_job_structure(self, wrap=True):
 
         #using MDA to loading the traj
         from MDAnalysis import Universe
-        import nglview as nv
         
         posfile = self._job.job_file_name("pyiron-pos-1.xyz")
         uni = Universe(posfile)
         print(len(uni.trajectory))
         
-        #TODO: using uni.dimensions to wrap traj
+        if wrap==True:
+            ag = uni.atoms
+            transform = wrap(ag)
+            uni.dimensions = self._job.structure.cell.cellpar()
+            uni.trajectory.add_transformations(transform)
         
-        return ECViewer(uni).gui
+        wgt = nv.show_mdanalysis(uni)
+        
+        show_arrow = True
+        if show_arrow == True:
+            wgt._gui.view.shape.add_arrow([-2, -2, -2], [2, -2, -2], [1, 0, 0], 0.5)
+            wgt._gui.view.shape.add_arrow([-2, -2, -2], [-2, 2, -2], [0, 1, 0], 0.5)
+            wgt._gui.view.shape.add_arrow([-2, -2, -2], [-2, -2, 2], [0, 0, 1], 0.5)        
+        
+        wgt._gui.view.camera = 'orthographic'
+        
+        return wgt
         #return uni
 
     def tail_file(self, filename="output", n=10):
@@ -81,7 +95,14 @@ class ECViewer():
         self.view.camera = 'orthographic'
         self.parameters = {"clipDist": 0}
         self.view.add_unitcell()   
-        self.view.add_spacefill() 
+        self.view.add_spacefill(radius_type="vdw",) 
+        
+        show_arrow = True
+        if show_arrow == True:
+            self.view.shape.add_arrow([-2, -2, -2], [2, -2, -2], [1, 0, 0], 0.5)
+            self.view.shape.add_arrow([-2, -2, -2], [-2, 2, -2], [0, 1, 0], 0.5)
+            self.view.shape.add_arrow([-2, -2, -2], [-2, -2, 2], [0, 0, 1], 0.5)
+        
         self.view.update_spacefill(
                     radiusScale=0.43
                 )        
@@ -167,10 +188,12 @@ class ECViewer():
         for e in set(self.elements):
             if (sel == 'All' or e == sel):
                 if e in self.colors:
-                    self.view.add_spacefill(selection='#' + e,
+                    self.view.add_spacefill(radius_type="vdw",
+                                            selection='#' + e,
                                             color=self.colors[e])
                 else:
-                    self.view.add_spacefill(selection='#' + e)
+                    self.view.add_spacefill(radius_type="vdw", 
+                                            selection='#' + e)
                     
         self._update_color_scheme()
         self._update_atom_type()
